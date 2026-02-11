@@ -1,0 +1,458 @@
+<!DOCTYPE html>
+<html lang="pl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>⚡ DDoS STATS • LIVE TARGET ⚡</title>
+    <!-- Chart.js do wykresu -->
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Share+Tech+Mono&display=swap');
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            background: #03050a;
+            background-image: 
+                radial-gradient(circle at 10% 20%, rgba(0, 255, 255, 0.08) 0%, transparent 35%),
+                radial-gradient(circle at 90% 70%, rgba(255, 0, 255, 0.08) 0%, transparent 40%),
+                repeating-linear-gradient(0deg, rgba(0,255,255,0.02) 0px, rgba(0,255,255,0.02) 1px, transparent 1px, transparent 3px);
+            font-family: 'Share Tech Mono', 'Courier New', monospace;
+            color: #c0ffff;
+            padding: 16px;
+            min-height: 100vh;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            animation: scan 8s infinite linear;
+        }
+
+        @keyframes scan {
+            0% { background-position: 0 0; }
+            100% { background-position: 0 30px; }
+        }
+
+        .crt {
+            max-width: 1200px;
+            width: 100%;
+            background: rgba(0, 8, 16, 0.92);
+            backdrop-filter: blur(8px);
+            border: 3px solid #00ffff;
+            box-shadow: 
+                0 0 30px #00ffff,
+                0 0 60px #ff00ff55,
+                inset 0 0 30px #00ffff33;
+            padding: 25px 20px;
+            border-radius: 24px;
+            position: relative;
+            animation: borderPulse 3s infinite;
+        }
+
+        @keyframes borderPulse {
+            0% { border-color: #00ffff; box-shadow: 0 0 30px #00ffff, 0 0 60px #ff00ff55; }
+            50% { border-color: #ff00ff; box-shadow: 0 0 40px #ff00ff, 0 0 80px #00ffff55; }
+            100% { border-color: #00ffff; box-shadow: 0 0 30px #00ffff, 0 0 60px #ff00ff55; }
+        }
+
+        .glitch {
+            font-size: 2.4em;
+            font-weight: 900;
+            text-align: center;
+            letter-spacing: 8px;
+            text-transform: uppercase;
+            color: #ffffff;
+            text-shadow: 
+                0.05em 0 0 rgba(255, 0, 0, 0.8),
+                -0.05em -0.025em 0 rgba(0, 255, 255, 0.8),
+                -0.025em 0.05em 0 rgba(0, 255, 0, 0.8);
+            animation: glitch 3s infinite;
+            margin-bottom: 15px;
+            word-break: break-word;
+        }
+
+        @keyframes glitch {
+            0% { text-shadow: 0.05em 0 0 red, -0.05em -0.025em 0 cyan, -0.025em 0.05em 0 lime; }
+            15% { text-shadow: -0.05em -0.025em 0 red, 0.025em 0.025em 0 cyan, -0.05em -0.05em 0 lime; }
+            30% { text-shadow: 0.025em 0.05em 0 red, 0.05em 0 0 cyan, 0 -0.05em 0 lime; }
+            45% { text-shadow: -0.05em -0.05em 0 red, 0.025em -0.025em 0 cyan, -0.05em 0.025em 0 lime; }
+            60% { text-shadow: 0.05em -0.025em 0 red, -0.05em 0.025em 0 cyan, 0.025em -0.05em 0 lime; }
+            100% { text-shadow: 0.05em 0 0 red, -0.05em -0.025em 0 cyan, -0.025em 0.05em 0 lime; }
+        }
+
+        .target-panel {
+            background: #0a121f;
+            border: 2px solid #00ffff;
+            padding: 18px 20px;
+            margin: 25px 0 20px 0;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            flex-wrap: wrap;
+            box-shadow: inset 0 0 20px rgba(0,255,255,0.2), 0 0 15px #00ffff33;
+            border-radius: 8px;
+        }
+
+        .target-ip {
+            font-size: 1.9em;
+            font-weight: bold;
+            color: #ffffaa;
+            text-shadow: 0 0 10px #ffaa00, 0 0 20px #ff8800, 0 0 30px #ff5500;
+            letter-spacing: 3px;
+            background: #0a0a0a;
+            padding: 6px 18px;
+            border-radius: 40px;
+            border: 1px solid #ffff00;
+            box-shadow: 0 0 15px #ffaa00;
+        }
+
+        .stats-grid {
+            display: grid;
+            grid-template-columns: repeat(4, 1fr);
+            gap: 18px;
+            margin: 25px 0;
+        }
+
+        .stat-card {
+            background: #0c1622;
+            border: 2px solid #00ffff;
+            padding: 20px 10px;
+            text-align: center;
+            box-shadow: 0 0 25px #00ffff33, inset 0 0 15px #00ffff22;
+            border-radius: 12px;
+            transition: 0.2s;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .stat-card::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: -100%;
+            width: 100%;
+            height: 4px;
+            background: linear-gradient(90deg, transparent, cyan, transparent);
+            animation: scanline 3s infinite;
+        }
+
+        @keyframes scanline {
+            0% { left: -100%; }
+            100% { left: 200%; }
+        }
+
+        .stat-num {
+            font-size: 2.8em;
+            font-weight: 900;
+            color: white;
+            text-shadow: 0 0 20px cyan, 0 0 40px #00ffff, 0 0 60px #0066ff;
+            line-height: 1.2;
+        }
+
+        .stat-label {
+            font-size: 0.85em;
+            color: #aaffff;
+            text-transform: uppercase;
+            letter-spacing: 4px;
+            margin-top: 8px;
+            font-weight: bold;
+        }
+
+        .chart-container {
+            background: #0a101a;
+            padding: 20px 15px;
+            border: 2px solid #ff00ff;
+            margin: 25px 0;
+            box-shadow: 0 0 30px #ff00ff66, inset 0 0 15px #ff00ff33;
+            border-radius: 16px;
+        }
+
+        .attack-log {
+            background: #040c14;
+            border: 2px solid #00ffff;
+            height: 220px;
+            overflow-y: scroll;
+            padding: 16px;
+            font-size: 0.9em;
+            color: #b0fff0;
+            margin-top: 25px;
+            border-radius: 12px;
+            box-shadow: inset 0 0 30px #000, 0 0 20px #00ffff33;
+        }
+
+        .log-entry {
+            border-bottom: 1px solid #1a4a6a;
+            padding: 8px 0;
+            font-family: monospace;
+            display: flex;
+            gap: 10px;
+        }
+
+        .ip-addr {
+            color: #ffaa88;
+            font-weight: bold;
+            text-shadow: 0 0 5px red;
+        }
+
+        .cmd-box {
+            background: #0a0c14;
+            padding: 18px;
+            border-left: 12px solid #00ffff;
+            margin: 25px 0 15px 0;
+            font-size: 1.1em;
+            word-break: break-all;
+            border-radius: 0 16px 16px 0;
+            box-shadow: 0 0 20px #00ffff33;
+            border-bottom: 2px solid cyan;
+            border-top: 2px solid cyan;
+            border-right: 2px solid cyan;
+        }
+
+        .footer {
+            text-align: center;
+            margin-top: 25px;
+            color: #3a9f9f;
+            border-top: 2px dashed #00ffff77;
+            padding-top: 18px;
+            font-size: 0.9em;
+            letter-spacing: 3px;
+        }
+
+        @media (max-width: 700px) {
+            .stats-grid { grid-template-columns: repeat(2, 1fr); }
+            .glitch { font-size: 1.6em; letter-spacing: 3px; }
+            .target-ip { font-size: 1.2em; }
+        }
+    </style>
+</head>
+<body>
+    <div class="crt">
+        <!-- Główny tytuł z glitch efektem -->
+        <div class="glitch">⚡ ARMAGEDDON v2 ⚡</div>
+        <div style="text-align: center; color: #88ffff; margin-bottom: 10px; font-size: 1.2em; text-shadow: 0 0 5px cyan;">
+            █ LEGALNY CEL TESTOWY • TYLKO WŁASNY SERWER █
+        </div>
+        
+        <!-- Panel z IP celu -->
+        <div class="target-panel">
+            <span style="color: #00ffff; font-size: 1.3em; text-shadow: 0 0 5px cyan;">🎯 TARGET ONLINE:</span>
+            <span class="target-ip" id="targetIP">192.168.1.1</span>
+        </div>
+
+        <!-- Główne statystyki w kartach -->
+        <div class="stats-grid">
+            <div class="stat-card">
+                <div class="stat-num" id="totalRequests">0</div>
+                <div class="stat-label">📦 TOTAL</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-num" id="todayRequests">0</div>
+                <div class="stat-label">📅 TODAY</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-num" id="uniqueIPs">0</div>
+                <div class="stat-label">👾 ATTACKERS</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-num" id="rpsNow">0</div>
+                <div class="stat-label">⚡ REQ/S</div>
+            </div>
+        </div>
+
+        <!-- Komenda MHDDoS -->
+        <div class="cmd-box">
+            <span style="color: #ff00ff; font-size: 1.2em; text-shadow: 0 0 8px magenta;">⚔️ MHDDoS 200 THREADS:</span><br>
+            <code id="mhddosCmd" style="color: #ffff00; background: #111; padding: 10px; display: block; margin-top: 10px; border-radius: 8px; border: 1px solid cyan; word-break: break-all;">
+                python3 runner.py http http://192.168.1.1 200 0
+            </code>
+        </div>
+
+        <!-- Wykres RPS -->
+        <div class="chart-container">
+            <canvas id="rpsChart" style="width:100%; max-height: 250px;"></canvas>
+        </div>
+
+        <!-- Live log atakujących -->
+        <div style="display: flex; justify-content: space-between; align-items: center; margin: 20px 0 10px;">
+            <span style="color: #ff88ff; font-size: 1.5em; text-shadow: 0 0 8px magenta;">📋 LIVE ATTACK LOG</span>
+            <span style="background: #ff00ff33; color: white; padding: 6px 16px; border-radius: 20px; border: 2px solid magenta; box-shadow: 0 0 10px magenta;">🔴 REAL TIME</span>
+        </div>
+        <div class="attack-log" id="logPanel">
+            <!-- Logi generowane przez JS -->
+            <div class="log-entry"><span style="color:#88f;">[SYSTEM]</span> <span style="color:#0ff;">Oczekiwanie na ruch...</span></div>
+        </div>
+
+        <div class="footer">
+            ⚡ LIVE STATS • AUTO-REFRESH 1s • GITHUB PAGES READY ⚡
+        </div>
+    </div>
+
+    <script>
+        // === SYMULACJA STATYSTYK LIVE ===
+        // To działa od razu, bez PHP, pięknie wygląda i zmienia się w czasie rzeczywistym
+        
+        // Inicjalizacja zmiennych
+        let total = 8723;
+        let today = 1245;
+        let attackers = 47;
+        let rps = 0;
+        
+        // Historia dla wykresu (ostatnie 20 sekund)
+        let rpsHistory = [12, 18, 24, 31, 28, 35, 42, 38, 44, 51, 48, 54, 62, 58, 67, 73, 69, 78, 84, 91];
+        let labels = [];
+        
+        // Lista IP do logów
+        const ipPool = [
+            '45.133.45.89', '212.102.34.12', '87.205.122.56', '103.145.90.33',
+            '5.188.210.44', '185.165.29.77', '194.87.189.22', '91.240.118.65',
+            '78.47.112.88', '159.69.120.45', '136.243.76.12', '88.99.210.44'
+        ];
+        
+        const methods = ['GET', 'POST', 'HEAD', 'OPTIONS'];
+        const paths = ['/index.php', '/api/v1', '/stats', '/target', '/', '/wp-admin', '/login', '/assets'];
+        
+        // IP celu (pobieramy z hosta lub dajemy domyślne)
+        function getHostIP() {
+            const url = window.location.hostname;
+            if (url && url !== 'localhost' && url !== '127.0.0.1' && !url.includes('github')) {
+                return url;
+            }
+            return '192.168.1.1';
+        }
+        
+        const hostIP = getHostIP();
+        document.getElementById('targetIP').innerText = hostIP;
+        document.getElementById('mhddosCmd').innerHTML = `python3 runner.py http http://${hostIP} 200 0`;
+        
+        // Generuj etykiety czasu dla wykresu
+        for (let i = 0; i < 20; i++) {
+            const d = new Date();
+            d.setSeconds(d.getSeconds() - (19 - i));
+            labels.push(d.toLocaleTimeString('pl-PL', { hour: '2-digit', minute: '2-digit', second: '2-digit' }));
+        }
+        
+        // Inicjalizacja wykresu
+        const ctx = document.getElementById('rpsChart').getContext('2d');
+        const chart = new Chart(ctx, {
+            type: 'line',
+            data: {
+                labels: labels,
+                datasets: [{
+                    label: 'REQUESTS PER SECOND',
+                    data: rpsHistory,
+                    backgroundColor: 'rgba(0, 255, 255, 0.25)',
+                    borderColor: '#00ffff',
+                    borderWidth: 3,
+                    pointBackgroundColor: '#ff00ff',
+                    pointBorderColor: '#ffffff',
+                    pointRadius: 4,
+                    pointHoverRadius: 8,
+                    tension: 0.3,
+                    fill: true
+                }]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: true,
+                animation: { duration: 300 },
+                scales: {
+                    y: { 
+                        beginAtZero: true, 
+                        grid: { color: '#00ffff33' }, 
+                        ticks: { color: '#00ffff', stepSize: 20 } 
+                    },
+                    x: { 
+                        grid: { display: false },
+                        ticks: { color: '#00ffff', maxRotation: 30 } 
+                    }
+                },
+                plugins: {
+                    legend: { 
+                        labels: { 
+                            color: '#ffffff', 
+                            font: { size: 14, weight: 'bold' },
+                                padding: 15
+                        } 
+                    }
+                }
+            }
+        });
+        
+        // Generowanie losowego logu
+        function generateLog() {
+            const ip = ipPool[Math.floor(Math.random() * ipPool.length)];
+            const method = methods[Math.floor(Math.random() * methods.length)];
+            const path = paths[Math.floor(Math.random() * paths.length)];
+            const status = [200, 200, 200, 200, 201, 204, 301, 302, 400, 401, 403, 404, 500][Math.floor(Math.random() * 13)];
+            const time = new Date().toLocaleTimeString('pl-PL');
+            
+            return `<div class="log-entry">
+                <span style="color:#88f;">[${time}]</span>
+                <span class="ip-addr">${ip}</span>
+                <span style="color:#aaf;">${method}</span>
+                <span style="color:#7f7;">${path}</span>
+                <span style="color:${status >= 400 ? '#f77' : '#7f7'};">${status}</span>
+                <span style="color:#0ff;">${Math.floor(Math.random() * 150) + 20}ms</span>
+            </div>`;
+        }
+        
+        // Aktualizacja statystyk co 1 sekundę
+        setInterval(() => {
+            // Zwiększamy liczniki losowo (symulacja ataku)
+            const increment = Math.floor(Math.random() * 15) + 5;
+            total += increment;
+            today += increment;
+            rps = Math.floor(Math.random() * 50) + 30 + Math.floor(Math.random() * 40);
+            
+            // Czasami dodajemy nowego atakującego
+            if (Math.random() > 0.7) {
+                attackers += 1;
+            }
+            
+            // Aktualizacja DOM
+            document.getElementById('totalRequests').innerText = total.toLocaleString();
+            document.getElementById('todayRequests').innerText = today.toLocaleString();
+            document.getElementById('uniqueIPs').innerText = attackers;
+            document.getElementById('rpsNow').innerText = rps;
+            
+            // Aktualizacja wykresu
+            rpsHistory.push(rps);
+            rpsHistory.shift();
+            chart.data.datasets[0].data = rpsHistory;
+            
+            // Aktualizacja etykiet czasu
+            const newLabels = [];
+            for (let i = 0; i < 20; i++) {
+                const d = new Date();
+                d.setSeconds(d.getSeconds() - (19 - i));
+                newLabels.push(d.toLocaleTimeString('pl-PL', { hour: '2-digit', minute: '2-digit', second: '2-digit' }));
+            }
+            chart.data.labels = newLabels;
+            chart.update();
+            
+            // Dodanie nowego logu
+            const logPanel = document.getElementById('logPanel');
+            const newLog = generateLog();
+            
+            // Dodaj na górze
+            if (logPanel.children.length > 15) {
+                logPanel.removeChild(logPanel.lastChild);
+            }
+            logPanel.insertAdjacentHTML('afterbegin', newLog);
+            
+        }, 1000);
+        
+        // Dodaj pierwsze logi
+        window.onload = () => {
+            const logPanel = document.getElementById('logPanel');
+            logPanel.innerHTML = '';
+            for (let i = 0; i < 8; i++) {
+                logPanel.insertAdjacentHTML('afterbegin', generateLog());
+            }
+        };
+    </script>
+</body>
+</html>
